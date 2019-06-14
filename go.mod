@@ -1,4 +1,4 @@
-module tencent_im
+module github.com/georgehao/tencent_im
 
 go 1.12
 

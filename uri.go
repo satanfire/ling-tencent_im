@@ -1,5 +1,7 @@
 package tencentim
 
+const schema = "https://console.tim.qq.com"
+
 // 账号管理
 const (
 	// V4IMOpenLoginSvcAccountImport 导入单个帐号

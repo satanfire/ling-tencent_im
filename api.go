@@ -5,6 +5,7 @@ import "bytes"
 // API interface
 type API interface {
 	Name() string
+	URI() string
 	QueryString() string
-	Body() (error, *bytes.Buffer)
+	Body() (*bytes.Buffer, error)
 }

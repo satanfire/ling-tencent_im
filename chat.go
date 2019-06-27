@@ -41,10 +41,10 @@ type OfflinePushInfo struct {
 	ApnsInfo    *ApnsInfo    `json:"ApnsInfo,omitempty"`
 }
 
-type sendChatSendMsg struct {
-	SyncOtherMachine int              `json:"SyncOtherMachine,omitempty"` //1：把消息同步到 From_Account 在线终端和漫游上； 2：消息不同步至 From_Account； 若不填写默认情况下会将消息存 From_Account 漫游
+// 单聊基础消息
+type baseChatSendMsg struct {
+	SyncOtherMachine int              `json:"SyncOtherMachine,omitempty"` //1：把消息同步到 From_Account 2：消息不同步至
 	FromAccount      string           `json:"From_Account,omitempty"`     // 管理员指定某一帐号向其它帐号发送消息
-	ToAccount        string           `json:"To_Account"`
 	MsgLifeTime      int              `json:"MsgLifeTime,omitempty"`
 	MsgRandom        uint32           `json:"MsgRandom"`
 	MsgTimeStamp     int64            `json:"MsgTimeStamp"`
@@ -52,95 +52,80 @@ type sendChatSendMsg struct {
 	OfflinePushInfo  *OfflinePushInfo `json:"OfflinePushInfo,omitempty"` // 同时设置离线推送信息
 }
 
+// SetOfflinePushInfo 设置离线消息, 如果你要赋值这个整体过来也是可以的
+func (bcsm *baseChatSendMsg) SetOfflinePushInfo(sopi *OfflinePushInfo) {
+	bcsm.OfflinePushInfo = sopi
+}
+
+func (bcsm *baseChatSendMsg) checkOfflinePushInfo() {
+	if bcsm.OfflinePushInfo == nil {
+		bcsm.OfflinePushInfo = &OfflinePushInfo{}
+	}
+}
+
+func (bcsm *baseChatSendMsg) checkAndroidApns() {
+	if bcsm.OfflinePushInfo.ApnsInfo == nil {
+		bcsm.OfflinePushInfo.ApnsInfo = &ApnsInfo{}
+	}
+
+	if bcsm.OfflinePushInfo.AndroidInfo == nil {
+		bcsm.OfflinePushInfo.AndroidInfo = &AndroidInfo{}
+	}
+}
+
+//
+func (bcsm *baseChatSendMsg) SetPushFlag(flag int) {
+	bcsm.checkOfflinePushInfo()
+	bcsm.OfflinePushInfo.PushFlag = flag
+}
+
+// SetTitle 设置推送标题
+func (bcsm *baseChatSendMsg) SetTitle(title string) {
+	bcsm.checkOfflinePushInfo()
+	bcsm.OfflinePushInfo.Title = title
+}
+
+// SetDesc 设置推送内容
+func (bcsm *baseChatSendMsg) SetDesc(desc string) {
+	bcsm.checkOfflinePushInfo()
+	bcsm.OfflinePushInfo.Desc = desc
+}
+
+// SetExt 设置透传内容
+func (bcsm *baseChatSendMsg) SetExt(ext string) {
+	bcsm.checkOfflinePushInfo()
+	bcsm.OfflinePushInfo.Ext = ext
+}
+
+// SetSound 推送声音文件路
+func (bcsm *baseChatSendMsg) SetSound(sound string) {
+	bcsm.checkOfflinePushInfo()
+	bcsm.checkAndroidApns()
+	bcsm.OfflinePushInfo.AndroidInfo.Sound = sound
+	bcsm.OfflinePushInfo.ApnsInfo.Sound = sound
+}
+
+// SenApnsImage 携带的图片地址
+func (bcsm *baseChatSendMsg) SenApnsImage(image string) {
+	bcsm.checkOfflinePushInfo()
+	bcsm.checkAndroidApns()
+	bcsm.OfflinePushInfo.ApnsInfo.Image = image
+}
+
+// SetFromAccount 设置FromAccount
+func (bcsm *baseChatSendMsg) SetFromAccount(fromAccount string) {
+	bcsm.FromAccount = fromAccount
+}
+
+type sendChatSendMsg struct {
+	baseChatSendMsg
+	ToAccount string `json:"To_Account"`
+}
+
 // SendMsg 单发单聊消息
 type SendMsg struct {
 	QueryStringParam QueryStringParam
 	SendMsgBody      sendChatSendMsg
-}
-
-// NewSendMsg 创建单发单聊消息
-func NewSendMsg(adminUserSig, toAccount string, content interface{}) *SendMsg {
-	qsp := QueryStringParam{
-		AppID:   appID,
-		UserSig: adminUserSig,
-	}
-
-	msg := msgBody{
-		MsgType: TIMTextElemMsgType,
-		MsgContent: msgContent{
-			Text: content.(string),
-		},
-	}
-	return &SendMsg{
-		QueryStringParam: qsp,
-		SendMsgBody: sendChatSendMsg{
-			SyncOtherMachine: SyncOtherMachineNoSync,
-			ToAccount:        toAccount,
-			MsgLifeTime:      60,
-			MsgRandom:        rand.Uint32(),
-			MsgTimeStamp:     time.Now().Unix(),
-			MsgBody:          []msgBody{msg},
-		},
-	}
-}
-
-// SetFromAccount 设置FromAccount
-func (sm *SendMsg) SetFromAccount(fromAccount string) {
-	sm.SendMsgBody.FromAccount = fromAccount
-}
-
-// SetOfflinePushInfo 设置离线消息, 如果你要赋值这个整体过来也是可以的
-func (sm *SendMsg) SetOfflinePushInfo(sopi *OfflinePushInfo) {
-	sm.SendMsgBody.OfflinePushInfo = sopi
-}
-
-func (sm *SendMsg) checkOfflinePushInfo() {
-	if sm.SendMsgBody.OfflinePushInfo == nil {
-		sm.SendMsgBody.OfflinePushInfo = &OfflinePushInfo{}
-	}
-}
-
-func (sm *SendMsg) checkAndroidApns() {
-	if sm.SendMsgBody.OfflinePushInfo.ApnsInfo == nil {
-		sm.SendMsgBody.OfflinePushInfo.ApnsInfo = &ApnsInfo{}
-	}
-
-	if sm.SendMsgBody.OfflinePushInfo.AndroidInfo == nil {
-		sm.SendMsgBody.OfflinePushInfo.AndroidInfo = &AndroidInfo{}
-	}
-}
-
-// SetTitle 设置推送标题
-func (sm *SendMsg) SetTitle(title string) {
-	sm.checkOfflinePushInfo()
-	sm.SendMsgBody.OfflinePushInfo.Title = title
-}
-
-// SetDesc 设置推送内容
-func (sm *SendMsg) SetDesc(desc string) {
-	sm.checkOfflinePushInfo()
-	sm.SendMsgBody.OfflinePushInfo.Desc = desc
-}
-
-// SetExt 设置透传内容
-func (sm *SendMsg) SetExt(ext string) {
-	sm.checkOfflinePushInfo()
-	sm.SendMsgBody.OfflinePushInfo.Ext = ext
-}
-
-// SetSound 推送声音文件路
-func (sm *SendMsg) SetSound(sound string) {
-	sm.checkOfflinePushInfo()
-	sm.checkAndroidApns()
-	sm.SendMsgBody.OfflinePushInfo.AndroidInfo.Sound = sound
-	sm.SendMsgBody.OfflinePushInfo.ApnsInfo.Sound = sound
-}
-
-// SenApnsImage 携带的图片地址
-func (sm *SendMsg) SenApnsImage(image string) {
-	sm.checkOfflinePushInfo()
-	sm.checkAndroidApns()
-	sm.SendMsgBody.OfflinePushInfo.ApnsInfo.Image = image
 }
 
 // QueryString 返回Query string
@@ -161,6 +146,70 @@ func (sm *SendMsg) URI() string {
 // Body 返回SendMsg的msg body
 func (sm *SendMsg) Body() (*bytes.Buffer, error) {
 	bytesData, err := json.Marshal(sm.SendMsgBody)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(string(bytesData))
+	return bytes.NewBuffer(bytesData), nil
+}
+
+// NewSendMsg 创建单发单聊消息
+func NewSendMsg(adminUserSig, toAccount string, content interface{}) *SendMsg {
+	qsp := QueryStringParam{
+		AppID:   appID,
+		UserSig: adminUserSig,
+	}
+
+	msg := msgBody{
+		MsgType: TIMTextElemMsgType,
+		MsgContent: msgContent{
+			Text: content.(string),
+		},
+	}
+	return &SendMsg{
+		QueryStringParam: qsp,
+		SendMsgBody: sendChatSendMsg{
+			baseChatSendMsg: baseChatSendMsg{
+				SyncOtherMachine: SyncOtherMachineNoSync,
+				MsgLifeTime:      60,
+				MsgRandom:        rand.Uint32(),
+				MsgTimeStamp:     time.Now().Unix(),
+				MsgBody:          []msgBody{msg},
+			},
+			ToAccount: toAccount,
+		},
+	}
+}
+
+type batchSendChatSendMsg struct {
+	baseChatSendMsg
+	ToAccount []string `json:"To_Account"`
+}
+
+// BatchSendMsg 批量发单聊消息
+type BatchSendMsg struct {
+	QueryStringParam QueryStringParam
+	SendMsgBody      batchSendChatSendMsg
+}
+
+// QueryString 返回Query string
+func (bsm *BatchSendMsg) QueryString() string {
+	return bsm.QueryStringParam.BuildQueryString()
+}
+
+// Name 获取消息类型
+func (bsm *BatchSendMsg) Name() string {
+	return "BatchSendMsg"
+}
+
+// URI 返回chat对应的URI
+func (bsm *BatchSendMsg) URI() string {
+	return V4OpenIMBatchSendMsg
+}
+
+// Body 返回SendMsg的msg body
+func (bsm *BatchSendMsg) Body() (*bytes.Buffer, error) {
+	bytesData, err := json.Marshal(bsm.SendMsgBody)
 	if err != nil {
 		return nil, err
 	}

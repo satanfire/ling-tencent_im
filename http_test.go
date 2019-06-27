@@ -17,7 +17,7 @@ func TestSendWithOfflinePushInfo(t *testing.T) {
 	SetAppID("142742")
 	sig := ""
 	sendMsg := NewSendMsg(sig, "USER:", "xxx")
-	sendMsg.SetTitle("test")
+	sendMsg.SendMsgBody.SetTitle("test")
 	send, err := Send(sendMsg)
 	if err != nil {
 		t.Fatal("test error", err)
@@ -29,7 +29,7 @@ func TestSendWithAndroidApns(t *testing.T) {
 	SetAppID("142742")
 	sig := ""
 	sendMsg := NewSendMsg(sig, "USER:", "xxx")
-	sendMsg.SetSound("www.baidu.mp3")
+	sendMsg.SendMsgBody.SetSound("www.baidu.mp3")
 	send, err := Send(sendMsg)
 	if err != nil {
 		t.Fatal("test error", err)

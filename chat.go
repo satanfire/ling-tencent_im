@@ -213,6 +213,33 @@ func (bsm *BatchSendMsg) Body() (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(bytesData))
 	return bytes.NewBuffer(bytesData), nil
+}
+
+// NewBatchSendMsg 创建批量发送单发单聊消息
+func NewBatchSendMsg(adminUserSig string, toAccounts []string, content interface{}) *BatchSendMsg {
+	qsp := QueryStringParam{
+		AppID:   appID,
+		UserSig: adminUserSig,
+	}
+
+	msg := msgBody{
+		MsgType: TIMTextElemMsgType,
+		MsgContent: msgContent{
+			Text: content.(string),
+		},
+	}
+	return &BatchSendMsg{
+		QueryStringParam: qsp,
+		SendMsgBody: batchSendChatSendMsg{
+			baseChatSendMsg: baseChatSendMsg{
+				SyncOtherMachine: SyncOtherMachineNoSync,
+				MsgLifeTime:      60,
+				MsgRandom:        rand.Uint32(),
+				MsgTimeStamp:     time.Now().Unix(),
+				MsgBody:          []msgBody{msg},
+			},
+			ToAccount: toAccounts,
+		},
+	}
 }
